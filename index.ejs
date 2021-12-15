@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <script src="./socket.io/socket.io.js"></script>
+    <style>
+        #container_chat.active>div:last-of-type, #container_chat>div:first-of-type {
+            display: block;
+        }
+        #container_chat.active>div:first-of-type, #container_chat>div:last-of-type {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div id="container_chat">
+        <div>
+            <form id="data_user">
+                <div style="text-align: center;">
+                    <input id="name_user" type="text" placeholder="Ingresa tu nombre">
+                    <input id="email_user" type="text" placeholder="Ingresa tu correo">
+                    <input style="background-color: #173ce2; /* Green */
+                        border: none;
+                        color: white;
+                        padding: 15px 32px;
+                        text-align: center;
+                        text-decoration: none;
+                        display: inline-block;
+                        font-size: 16px;
+                        cursor: pointer;
+                    "type="submit" value="Ingresar al chat">
+                </div>
+            </form>
+        </div>
+        <div>
+            <div>
+               <form class="prod-form" id="add">
+                <div class="d-flex flex-column align-items-center">
+                    <input type="text" name="product" class="form-control" placeholder="Producto" style="margin-bottom: 10px;">
+                    <input type="number" name="price" class="form-control" placeholder="Precio" style="margin-bottom: 10px;">
+                    <input type="text" name="foto" class="form-control" placeholder="Foto" style="margin-bottom: 10px;">
+                    <button id="sendproduct">Ingresar producto</button>
+                </div>
+            </form>
+            </div>
+           
+                <div style="text-align: center;">
+                    <input type="text" id="inputtext" placeholder="Ingrese aquí su texto">
+                    <button id="sendSocket">Enviar</button>
+                    <p id="contenedor_texto" style="background-color: #2aeeee7c;  color: black; text-align: left;"></p>
+                </div>
+              
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let bton= document.getElementById("sendproduct");
+        let student = null;
+        let socket = null;
+        let input = document.getElementById("inputtext");
+        let parrafo = document.getElementById("contenedor_texto");
+        let button = document.getElementById("sendSocket");
+        let form_data_user = document.getElementById("data_user");
+        let container_chat = document.getElementById("container_chat");
+        let user_list = document.getElementById("user_list");
+        form_data_user.addEventListener("submit", e=>{
+            e.preventDefault();
+            student = {
+                name: e.target[0].value,
+                email: e.target[1].value
+            }
+            if(student.name == "" || student.email == ""){
+                window.location.reload();
+            }
+            socket = io();
+            socket.emit("addUser", student);
+            container_chat.classList = "active";
+            readSockets();
+        });
+      
+        function getDateTime() {
+        let now     = new Date(); 
+        let year    = now.getFullYear();
+        let month   = now.getMonth()+1; 
+        let day     = now.getDate();
+        let hour    = now.getHours();
+        let minute  = now.getMinutes();
+        let second  = now.getSeconds(); 
+        if(month.toString().length == 1) {
+             month = '0'+month;
+        }
+        if(day.toString().length == 1) {
+             day = '0'+day;
+        }   
+        if(hour.toString().length == 1) {
+             hour = '0'+hour;
+        }
+        if(minute.toString().length == 1) {
+             minute = '0'+minute;
+        }
+        if(second.toString().length == 1) {
+             second = '0'+second;
+        }   
+        var dateTime = year+'/'+month+'/'+day+' '+hour+':'+minute+':'+second;   
+         return dateTime;
+    }
+
+    function product(){
+    socket.on("productos",data=>{
+    })
+    }
+
+        function readSockets(){
+            loadChat();
+            socket.on("listenserver", data =>{
+                console.log("Recibiendo..", data);
+               
+                let inner = ``;
+                data.forEach(element => {
+                    let time=getDateTime();
+                    inner += `<b>${element.name } ${time}:</b> ${element.mensaje} </br>`;
+                });
+                parrafo.innerHTML = inner;
+            });
+            
+        }
+        function loadChat(){
+            socket.on("init", data =>{
+                let inner = ``;
+                console.log("Recibiendo..", data);
+                data.forEach(element => {
+                    let time=getDateTime();
+                    inner += `<b>${element.name } ${time}:</b> ${element.mensaje} </br>`;
+                });
+                parrafo.innerHTML = inner;
+            });
+            socket.on("loadUsers", data =>{
+                console.log("Nuevo usuario", data);
+                let inner = ``;
+                data.forEach(element => {
+                    let status = element.active ? "(conectado)" : "(desconectado)";
+                    inner += `<li><b>${element.name}:</b> ${status}</li>`;
+                });
+                user_list.innerHTML = inner;
+            });
+        }
+        
+        bton.addEventListener("click",e=>{
+            let sendproducto={
+                producto:producto.product,
+                precio:producto.price,
+                foto:producto.foto
+            }
+                socket.emit("producto",sendproducto);
+        })
+        
+        
+        button.addEventListener("click", e =>{
+            let sendMessagge = {
+                ...student,
+                mensaje: input.value,
+            }
+            socket.emit("mensaje", sendMessagge);
+            input.value = "";
+        })
+    </script>
+</body>
+</html>
